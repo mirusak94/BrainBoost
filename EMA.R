@@ -6,6 +6,7 @@ library(dplyr)
 library(data.table)
 library(tidyverse)
 library(reshape)
+library(ggplot2)
 
 #load data into one file
 folders<-list.files(path = "//hobbes/daten/PSM/Brainboost/moviesens/EMA", recursive = TRUE,pattern = "*xlsx", full.names = TRUE)
@@ -27,7 +28,7 @@ all<-merge(all, group_info, by='subject')
 
 ##add info about the test day
 #triggers<-select(all,subject, timepoint,Trigger_date, Form)
-all<- all %>% mutate(Trigger_date=substr(Trigger_date,1,10),Trigger_time=substr(Trigger_time,12,19))%>% 
+all<- all %>% mutate(Trigger_date=substr(Trigger_date,1,10),Trigger_time=substr(Trigger_time,12,19),Form_start_time=substr(Form_start_time,12,19))%>% 
   mutate(Trigger_date=as.Date(Trigger_date)) %>%
   group_by(subject, timepoint)%>%
   mutate(test_day=as.character (Trigger_date-min(Trigger_date)))
@@ -36,12 +37,11 @@ all<- all %>% mutate(Trigger_date=substr(Trigger_date,1,10),Trigger_time=substr(
 all<-all[-which(all$subject=='sub07'&all$timepoint=='fu'&all$test_day==4),]
 all$test_day[which(all$subject=='sub07'&all$timepoint=='fu'&all$test_day==6)]<-4
 #drop out triggers later than the last test day 
-all<-filter(all, test_day=='0'|test_day=='1'|test_day=='2'|test_day=='3'|test_day=='4')
+all<-filter(all, test_day=='1'|test_day=='2'|test_day=='3'|test_day=='4')
 
 #RESPONSE RETURN
 all<-group_by(all, subject, timepoint, test_day, group)
 return<-count(all, Form)
-return<-return[-which(return$test_day=='0'),] #delete test day 0 
 return<-ungroup(return)
 
 #to avoid errors, count triggers where some data are missing
@@ -80,6 +80,14 @@ ggplot(data=filter(return, group == 'C', Form=='Erlebnisse'), aes(x=factor(timep
 #nf group
 ggplot(data=filter(return, group == 'E', Form=='Erlebnisse'), aes(x=factor(timepoint,levels = c("pre", "post","fu")),y=n, fill=test_day))+geom_boxplot()+ylim(1,13) +xlab('timepoint')+ylab('triggers answered')+ ggtitle('NF group - experiences response')
 
-##clean DATA
-PANAS<-select(filter(all, Form=='Affekt'), !Trigger, !Trigger_date, !Trigger_time, !Trigger_counter, !where(~is.na(.x)))
+##clean DATA (sorted to negative affect, positive affect, dss-4, inner tension, experience)
+neg_af<-na.omit(select(all,subject, timepoint,group, test_day, Form_start_time,pana_traurig,pana_gereizt, pana_wutend,pana_niedergeschlagen,pana_angstlich),cols=c(pana_traurig,pana_gereizt, pana_wutend,pana_niedergeschlagen,pana_angstlich))
+pos_af<-na.omit(select(all,subject, timepoint,group, test_day, Form_start_time,pana_glucklich,pana_entspannt, pana_zufrieden,pana_frohlich,pana_enthusiastisch),cols=c(pana_glucklich,pana_entspannt, pana_zufrieden,pana_frohlich,pana_enthusiastisch))
+DSS<-na.omit(select(all,subject, timepoint,group, test_day, Form_start_time,dss4_01, dss4_02,dss4_03,dss4_04),cols=c(dss4_01, dss4_02,dss4_03,dss4_04))
+ansp<-na.omit(select(all,subject, timepoint,group, test_day, Form_start_time,anspann_01),cols=anspann_01)
+exper<-na.omit(select(all,subject, timepoint,group, test_day, Form_start_time,erleb__schlecht, erleb__gut),cols=c(erleb__schlecht, erleb__gut))
 
+#calculate mean and sd for every subject per timepoint (find literature on this, how is it evaluated?)
+neg_af<-group_by(neg_af, subject, timepoint, test_day)
+#plots
+ggplot(ansp,aes(Form_start_time,anspann_01), colour=group)+stat_summary(fun.y = mean,geom = 'point')+stat_summary(fun.y = mean,geom = 'line')
