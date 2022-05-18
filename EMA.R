@@ -6,8 +6,8 @@ library(dplyr)
 library(data.table)
 library(tidyverse)
 library(reshape)
-library(ggplot2)
 library(psych)
+library(Hmisc)
 
 #load data into one file
 folders<-list.files(path = "//hobbes/daten/PSM/Brainboost/moviesens/EMA", recursive = TRUE,pattern = "*xlsx", full.names = TRUE)
