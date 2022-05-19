@@ -23,7 +23,7 @@ all<- all %>% mutate(timepoint=substr(subject,56,57),subject=substr(subject,51,5
 all<-select_if(all,~any(!is.na(.)))
 
 #add info about randomization and drop the participants that dropped out before post 
-demographics<-read_xlsx('//zi.local/flstorage/dep_psm/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/demographics.xlsx')
+demographics<-read_xlsx('Y:/Projects/BrainBoost/data_analysis/demographics.xlsx')
 group_info<-select(filter(demographics, is.na(Comments)|!Comments=='dropped out'), subject=Subject, group=Group)
 all<-merge(all, group_info, by='subject')
 
