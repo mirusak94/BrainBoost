@@ -1,5 +1,5 @@
 #BrainBoost self-reports
-#Miroslava Jindrova, ZI Mannheim, 2021
+#Miroslava Jindrova, ZI Mannheim, 2021-2022
 
 library(dplyr)
 library(readxl)
@@ -37,9 +37,32 @@ fu<-merge(fu, group_info, by='subject')
 
 #extract ders questionnaire
 ders<-rbind(select(pre,c('subject','timepoint','group',57:92)),select(post,c('subject','timepoint','group',57:92)),select(fu,c('subject','timepoint','group',92:127)))
-#calculate the score (items 1,3,6,7,8,10,17,20,22,24 and 34 are reverse score items)
 
-colnames(ders)[4:39]<-c(paste(rep('i',36),as.character(c(1:36)),collapse = '')) #this stil doesn't work, I want to have i1 to i36
-ders<-mutate(ders, total=-'1'+'2')
+#calculate total score (items 1,3,6,7,8,10,17,20,22,24 and 34 are reverse score items)
+colnames(ders)[4:39]<-paste0(rep('i',36),1:36) #rename the items i1 to i36 for easier indexing
+ders<-mutate(ders, total=-i1+i2-i3+i4+i5-i6-i7-i8+i9-i10+i11+i12+i13+i14+i15+i16-i17+i18+i19-i20+i21-i22+i23-i24+i25+i26+i27+i28+i29+i30+i31+i32+i33-i34+i35+i36)
+ders<-na.omit(ders) #get rid of data w/NAs
 
-ders<-mutate(ders, total=-.[[4]]+.[[5]]-.[[6]]+.[[7]]+.[[8]]-.[[9]]-.[[10]]-.[[11]]+.[[12]]-.[[13]]+.[[14]]+.[[15]]+.[[16]]+.[[17]]+.[[18]]+.[[19]]-.[[20]]+.[[21]]+.[[22]]-.[[23]]+.[[24]]-.[[25]]+.[[26]]-.[[27]]+.[[28]]+.[[29]]+.[[30]]+.[[31]]+.[[32]]+.[[33]]+.[[34]]+.[[35]]+.[[36]]-.[[37]]+.[[38]]+.[[39]])
+#plot ders
+ggplot(ders,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')
+
+#extract BDI questionnaire
+bdi<-rbind(select(pre,c('subject','timepoint','group',6:26)),select(post,c('subject','timepoint','group',6:26)),select(fu,c('subject','timepoint','group',41:61)))
+
+#change scoring of change sleeping pattern and change in appetite item (since we are not interested in the direction of the change) 
+#IT IS IMPORTANT TO KEEP THE ORDER OF THE CODE LINES HERE (otherwise you rewrite the data incorrectly)
+bdi$Veränderungen.der.Schlafgewohnheiten[bdi$Veränderungen.der.Schlafgewohnheiten>=2&bdi$Veränderungen.der.Schlafgewohnheiten<=3]<-2
+bdi$Veränderungen.der.Schlafgewohnheiten[bdi$Veränderungen.der.Schlafgewohnheiten>=4&bdi$Veränderungen.der.Schlafgewohnheiten<=5]<-3
+bdi$Veränderungen.der.Schlafgewohnheiten[bdi$Veränderungen.der.Schlafgewohnheiten>=6&bdi$Veränderungen.der.Schlafgewohnheiten<=7]<-4
+
+bdi$Veränderung.des.Appetits[bdi$Veränderung.des.Appetits>=2&bdi$Veränderung.des.Appetits<=3]<-2
+bdi$Veränderung.des.Appetits[bdi$Veränderung.des.Appetits>=4&bdi$Veränderung.des.Appetits<=5]<-3
+bdi$Veränderung.des.Appetits[bdi$Veränderung.des.Appetits>=6&bdi$Veränderung.des.Appetits<=7]<-4
+
+#calculate total score
+bdi<-mutate(bdi, total=sum(bdi[,4:24]))
+bdi$total<-rowSums(bdi[,4:24])
+bdi<-na.omit(bdi) #get rid of data w/NAs
+
+#plot bdi
+ggplot(bdi,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')
