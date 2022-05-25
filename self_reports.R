@@ -24,7 +24,13 @@ fu<-mutate(fu, subject=sub('b','sub-',substr(subject,3,5)))
 #add timepoint info to each dataset
 pre<-mutate(pre, timepoint=rep('pre',length(subject)))
 post<-mutate(post, timepoint=rep('post',length(subject)))
-fu<-mutate(fu, timepoint=rep('fu',length(subject)))
+#fu includes both - 3m and 6m follow up, this has to be separated
+fu<-mutate(fu, Date=as.Date(gsub('\\.','/',substr(Zeitstempel,1,10)),format='%d/%m/%Y'))
+fu<-group_by(fu,subject)
+fu1<-slice(fu, which.min(Date))
+fu1<-mutate(fu1, timepoint=rep('fu1',length(subject)))
+fu2<-slice(fu, -which.min(Date))
+fu2<-mutate(fu2, timepoint=rep('fu2',length(subject)))
 
 #add group info and remove drop outs
 #add info about randomization and drop the participants that dropped out before post 
@@ -33,10 +39,11 @@ group_info<-select(filter(demographics, is.na(Comments)|!Comments=='dropped out'
 group_info<-mutate(group_info, subject=sub('sub','sub-',subject))
 pre<-merge(pre, group_info, by='subject')
 post<-merge(post, group_info, by='subject')
-fu<-merge(fu, group_info, by='subject')
+fu1<-merge(fu1, group_info, by='subject')
+fu2<-merge(fu2, group_info, by='subject')
 
 #extract ders questionnaire
-ders<-rbind(select(pre,c('subject','timepoint','group',57:92)),select(post,c('subject','timepoint','group',57:92)),select(fu,c('subject','timepoint','group',92:127)))
+ders<-rbind(select(pre,c('subject','timepoint','group',57:92)),select(post,c('subject','timepoint','group',57:92)),select(fu1,c('subject','timepoint','group',92:127)),select(fu2,c('subject','timepoint','group',92:127)))
 
 #calculate total score (items 1,3,6,7,8,10,17,20,22,24 and 34 are reverse score items)
 colnames(ders)[4:39]<-paste0(rep('i',36),1:36) #rename the items i1 to i36 for easier indexing
@@ -44,10 +51,10 @@ ders<-mutate(ders, total=-i1+i2-i3+i4+i5-i6-i7-i8+i9-i10+i11+i12+i13+i14+i15+i16
 ders<-na.omit(ders) #get rid of data w/NAs
 
 #plot ders
-ggplot(ders,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')
+ggplot(ders,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')
 
 #extract BDI questionnaire
-bdi<-rbind(select(pre,c('subject','timepoint','group',6:26)),select(post,c('subject','timepoint','group',6:26)),select(fu,c('subject','timepoint','group',41:61)))
+bdi<-rbind(select(pre,c('subject','timepoint','group',6:26)),select(post,c('subject','timepoint','group',6:26)),select(fu1,c('subject','timepoint','group',41:61)),select(fu2,c('subject','timepoint','group',41:61)))
 
 #change scoring of change sleeping pattern and change in appetite item (since we are not interested in the direction of the change) 
 #IT IS IMPORTANT TO KEEP THE ORDER OF THE CODE LINES HERE (otherwise you rewrite the data incorrectly)
@@ -60,9 +67,18 @@ bdi$Veränderung.des.Appetits[bdi$Veränderung.des.Appetits>=4&bdi$Veränderung.
 bdi$Veränderung.des.Appetits[bdi$Veränderung.des.Appetits>=6&bdi$Veränderung.des.Appetits<=7]<-4
 
 #calculate total score
-bdi<-mutate(bdi, total=sum(bdi[,4:24]))
 bdi$total<-rowSums(bdi[,4:24])
 bdi<-na.omit(bdi) #get rid of data w/NAs
 
 #plot bdi
-ggplot(bdi,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')
+ggplot(bdi,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('BDI-II score')+ggtitle('Besk Depression Inventory')
+
+#extract PCL-5 questionnaire
+pcl5<-rbind(select(pre,c('subject','timepoint','group',312:331)),select(post,c('subject','timepoint','group',174:193)),select(fu1,c('subject','timepoint','group',209:228)),select(fu2,c('subject','timepoint','group',209:228)))
+
+#calculate total score
+pcl5$total<-rowSums(pcl5[,4:23])
+pcl5<-na.omit(pcl5) #get rid of data w/NAs
+
+#plot pcl-5
+ggplot(pcl5,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('PCL-5 score')+ggtitle('PTSD Checklist for DSM-5')
