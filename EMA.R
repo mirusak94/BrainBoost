@@ -8,6 +8,7 @@ library(tidyverse)
 library(reshape)
 library(psych)
 library(Hmisc)
+library(chron)
 
 #load data into one file
 folders<-list.files(path = "//hobbes/daten/PSM/Brainboost/moviesens/EMA", recursive = TRUE,pattern = "*xlsx", full.names = TRUE)
@@ -29,7 +30,7 @@ all<-merge(all, group_info, by='subject')
 
 ##add info about the test day
 #triggers<-select(all,subject, timepoint,Trigger_date, Form)
-all<- all %>% mutate(Trigger_date=substr(Trigger_date,1,10),Trigger_time=substr(Trigger_time,12,19),Form_start_time=substr(Form_start_time,12,19))%>% 
+all<- all %>% mutate(Trigger_date=substr(Trigger_date,1,10),Trigger_time=substr(Trigger_time,12,19),Form_start_time=times(substr(Form_start_time,12,19)))%>% 
   mutate(Trigger_date=as.Date(Trigger_date)) %>%
   group_by(subject, timepoint)%>%
   mutate(test_day=as.character (Trigger_date-min(Trigger_date)))
@@ -91,22 +92,30 @@ exper<-na.omit(select(all,subject, timepoint,group, test_day, Form_start_time,er
 
 #calculate final scores
 neg_af<-mutate(neg_af, sum_neg=(pana_traurig+pana_gereizt+pana_wutend+pana_niedergeschlagen+pana_angstlich))
-neg_af<-group_by(neg_af, subject, timepoint, group)
-na<-summarise(neg_af, na=mean(sum_neg),mssd_na=mssd(sum_neg))
+neg_af<-group_by(neg_af, subject, timepoint, group, test_day)
+na_day<-summarise(neg_af, na=mean(sum_neg),mssd_na=mssd(sum_neg))
+na_day<-group_by(na_day, subject, timepoint, group)
+na<-summarise(na_day, na=mean(na),mssd_na=mean(mssd_na))
 
 pos_af<-mutate(pos_af, sum_pos=(pana_glucklich+pana_entspannt+pana_zufrieden+pana_frohlich+pana_enthusiastisch))
-pos_af<-group_by(pos_af, subject, timepoint, group)
-pa<-summarise(pos_af, pa=mean(sum_pos),mssd_pa=mssd(sum_pos))
+pos_af<-group_by(pos_af, subject, timepoint, group,test_day)
+pa_day<-summarise(pos_af, pa=mean(sum_pos),mssd_pa=mssd(sum_pos))
+pa_day<-group_by(pa_day, subject, timepoint, group)
+pa<-summarise(pa_day, pa=mean(pa),mssd_pa=mean(mssd_pa))
 
 DSS<-mutate(DSS, dss4_m=(dss4_01+dss4_02+dss4_03+dss4_04)/4)
-DSS<-group_by(DSS, subject, timepoint, group)
-dss4<-summarise(DSS, dss4=mean(dss4_m),mssd_dss4=mssd(dss4_m))
+DSS<-group_by(DSS, subject, timepoint, group,test_day)
+dss4_day<-summarise(DSS, dss4=mean(dss4_m),mssd_dss4=mssd(dss4_m))
+dss4<-summarise(dss4_day, dss4=mean(dss4),mssd_dss4=mean(mssd_dss4))
 
-ansp<-group_by(ansp, subject, timepoint, group)
-inner_tens<-summarise(ansp, tens=mean(anspann_01),mssd_tens=mssd(anspann_01))
+ansp<-group_by(ansp, subject, timepoint, group, test_day)
+inner_tens_day<-summarise(ansp, tens=mean(anspann_01),mssd_tens=mssd(anspann_01))
+inner_tens<-summarise(inner_tens_day, tens=mean(tens),mssd_tens=mean(mssd_tens))
+  
+exper<-group_by(exper, subject, timepoint, group,test_day)
+exp_gb_day<-summarise(exper, g_exp=mean(erleb__gut),b_exp=mean(erleb__schlecht),mssd_ge=mssd(erleb__gut),mssd_be=mssd(erleb__schlecht))
+exp_gb<-summarise(exp_gb_day, g_exp=mean(g_exp),b_exp=mean(b_exp),mssd_ge=mean(mssd_ge),mssd_be=mean(mssd_be))
 
-exper<-group_by(exper, subject, timepoint, group)
-exp_gb<-summarise(exper, g_exp=mean(erleb__gut),b_exp=mean(erleb__schlecht),mssd_ge=mssd(erleb__gut),mssd_be=mssd(erleb__schlecht))
 #merge all scores in one table
 ema<-merge(merge(merge(merge(pa,na),dss4),inner_tens),exp_gb)
 
