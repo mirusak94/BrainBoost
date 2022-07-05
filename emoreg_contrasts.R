@@ -6,16 +6,16 @@ library(readxl)
 library(tidyr)
 
 #load the tables containing pre data
-pre_contrasts1<-read.delim('//zi.local/flstorage/dep_psm/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-pre/task-emoreg/taskrelated_activity/trimmed_original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
-pre_contrasts2<-read.delim('//zi.local/flstorage/dep_psm/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-pre/task-emoreg/taskrelated_activity/original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
+pre_contrasts1<-read.delim('Y:/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-pre/task-emoreg/taskrelated_activity/trimmed_original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
+pre_contrasts2<-read.delim('Y:/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-pre/task-emoreg/taskrelated_activity/original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
 #merge them into the one table
 pre_contrasts<-merge(pre_contrasts1,pre_contrasts2,all = TRUE)
 #delete the initial incomplete tables from the R workspace
 remove(pre_contrasts1,pre_contrasts2)
 
 #load post and fu data
-post_contrasts<-read.delim('//zi.local/flstorage/dep_psm/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-post/task-emoreg/taskrelated_activity/original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
-fu_contrasts<-read.delim('//zi.local/flstorage/dep_psm/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-fu/task-emoreg/taskrelated_activity/original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
+post_contrasts<-read.delim('Y:/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-post/task-emoreg/taskrelated_activity/original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
+fu_contrasts<-read.delim('Y:/Projects/BrainBoost/data_analysis/spm_analysis/firstlevel/ses-fu/task-emoreg/taskrelated_activity/original/ROI-cons_mask-Right Amygdala 25_1_roi.txt')
 
 #merge all to one table (add a column with timepoint info) and remove the initial tables
 pre_contrasts<-pre_contrasts%>%mutate(timepoint = "pre")
@@ -28,7 +28,7 @@ remove(pre_contrasts,post_contrasts,fu_contrasts)
 contrasts<-mutate(contrasts,subject= sub('sub-SUB','sub',subject))
 
 #load demographics table to add info about randomization
-demographics<-read_xlsx('//zi.local/flstorage/dep_psm/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/demographics.xlsx')
+demographics<-read_xlsx('Y:/Projects/BrainBoost/data_analysis/demographics.xlsx')
 group_info<-select(demographics, subject=Subject, group=Group)
 contrasts<-merge(contrasts, group_info, by='subject')
 
