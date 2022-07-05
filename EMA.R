@@ -25,7 +25,7 @@ all<-select_if(all,~any(!is.na(.)))
 
 #add info about randomization and drop the participants that dropped out before post 
 demographics<-read_xlsx('Y:/Projects/BrainBoost/data_analysis/demographics.xlsx')
-group_info<-select(filter(demographics, is.na(Comments)|!Comments=='dropped out'), subject=Subject, group=Group)
+group_info<-select(filter(demographics, is.na(Comments)|!str_detect(Comments,'dropped out')), subject=Subject, group=Group)
 all<-merge(all, group_info, by='subject')
 
 ##add info about the test day
@@ -82,6 +82,16 @@ ggplot(data=filter(return, group == 'C', Form=='Erlebnisse'), aes(x=factor(timep
 #nf group
 ggplot(data=filter(return, group == 'E', Form=='Erlebnisse'), aes(x=factor(timepoint,levels = c("pre", "post","fu")),y=n, fill=test_day))+geom_boxplot()+ylim(1,13) +xlab('timepoint')+ylab('triggers answered')+ ggtitle('NF group - experiences response')
 
+#calculate % response rate
+return<-group_by(return, subject, timepoint, group, Form)
+return_sum<-summarise(return, return=mean(n)/13*100)
+return_sum<-filter(return_sum,Form!='Missing')
+
+#plot % return
+ggplot(data=filter(return_sum, group =='E'), aes(x=factor(timepoint,levels = c("pre", "post","fu")),y=return, fill=Form))+geom_boxplot()+ylim(1,100)+xlab('timepoint')+ylab('% response rate')+ ggtitle('NF group - EMA response rate')+ scale_color_brewer(palette="Dark2")
+ggplot(data=filter(return_sum, group =='C'), aes(x=factor(timepoint,levels = c("pre", "post","fu")),y=return, fill=Form))+geom_boxplot()+ylim(1,100)+xlab('timepoint')+ylab('% response rate')+ ggtitle('control group - EMA response rate')+ scale_color_brewer(palette="Dark2")
+
+
 ##clean DATA 
 #(sorted to negative affect, positive affect, dss-4, inner tension, experience)
 neg_af<-na.omit(select(all,subject, timepoint,group, test_day, Form_start_time,pana_traurig,pana_gereizt, pana_wutend,pana_niedergeschlagen,pana_angstlich),cols=c(pana_traurig,pana_gereizt, pana_wutend,pana_niedergeschlagen,pana_angstlich))
@@ -121,17 +131,27 @@ ema<-merge(merge(merge(merge(pa,na),dss4),inner_tens),exp_gb)
 
 ##plots
 #means
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = na), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Negative Affect')+ggtitle('Change in negative affect')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = pa), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Positive Affect')+ggtitle('Change in positive affect')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = dss4), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DSS-4')+ggtitle('Change in dissociative state')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = tens), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Inner tension')+ggtitle('Change in inner tension')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = g_exp), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Good experience intensity')+ggtitle('Change in reactivity to good experiences')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = b_exp), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Bad experience intensity')+ggtitle('Change in reactivity to bad experiences')
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = na), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Negative Affect')+ggtitle('Change in negative affect')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = pa), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Positive Affect')+ggtitle('Change in positive affect')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = dss4), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DSS-4')+ggtitle('Change in dissociative state')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = tens), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Inner tension')+ggtitle('Change in inner tension')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = g_exp), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Good experience intensity')+ggtitle('Change in reactivity to good experiences')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = b_exp), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Bad experience intensity')+ggtitle('Change in reactivity to bad experiences')+scale_color_manual(values=c("#D55E00", "#009E73"))
 
 #MSSD
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_na), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Negative Affect (MSSD)')+ggtitle('Instability of negative affect')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_pa), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Positive Affect (MSSD)')+ggtitle('Instability of positive affect')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_dss4), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DSS-4 (MSSD)')+ggtitle('Instability of dissociative state')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_tens), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Inner tension (MSSD)')+ggtitle('Instability of inner tension')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_ge), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Good experience intensity (MSSD)')+ggtitle('Instability of reactivity to good experiences')
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_be), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Bad experience intensity (MSSD)')+ggtitle('Instability of reactivity to bad experiences')
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_na), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Negative Affect (MSSD)')+ggtitle('Instability of negative affect')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_pa), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Positive Affect (MSSD)')+ggtitle('Instability of positive affect')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_dss4), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DSS-4 (MSSD)')+ggtitle('Instability of dissociative state')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_tens), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Inner tension (MSSD)')+ggtitle('Instability of inner tension')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_ge), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Good experience intensity (MSSD)')+ggtitle('Instability of reactivity to good experiences')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = mssd_be), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Bad experience intensity (MSSD)')+ggtitle('Instability of reactivity to bad experiences')+scale_color_manual(values=c("#D55E00", "#009E73"))
+
+nf_sample<-length(unique(ema$subject[which(ema$group=='E')]))
+ctrl_sample<-length(unique(ema$subject[which(ema$group=='C')]))
+nf_sample_pre<-length(unique(ema$subject[which(ema$group=='E'&ema$timepoint=='pre')]))
+nf_sample_post<-length(unique(ema$subject[which(ema$group=='E'&ema$timepoint=='post')]))
+nf_sample_fu<-length(unique(ema$subject[which(ema$group=='E'&ema$timepoint=='fu')]))
+ctrl_sample_pre<-length(unique(ema$subject[which(ema$group=='C'&ema$timepoint=='pre')]))
+ctrl_sample_post<-length(unique(ema$subject[which(ema$group=='C'&ema$timepoint=='post')]))
+ctrl_sample_fu<-length(unique(ema$subject[which(ema$group=='C'&ema$timepoint=='fu')]))
+
