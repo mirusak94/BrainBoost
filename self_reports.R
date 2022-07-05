@@ -3,6 +3,7 @@
 
 library(dplyr)
 library(readxl)
+library(ggplot2)
 
 #read the data
 pre<-read.csv('//hobbes/daten/PSM/Brainboost/evasys/BBpre_raw.csv', sep = ';')
@@ -51,7 +52,19 @@ ders<-mutate(ders, total=-i1+i2-i3+i4+i5-i6-i7-i8+i9-i10+i11+i12+i13+i14+i15+i16
 ders<-na.omit(ders) #get rid of data w/NAs
 
 #plot ders
-ggplot(ders,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')
+ggplot(ders,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')+scale_color_manual(values=c("#D55E00", "#009E73"))
+
+#calculate sample size
+ders_nf_sample<-length(unique(ders$subject[which(ders$group=='E')]))
+ders_ctrl_sample<-length(unique(ders$subject[which(ders$group=='C')]))
+ders_nf_sample_pre<-length(unique(ders$subject[which(ders$group=='E'&ders$timepoint=='pre')]))
+ders_nf_sample_post<-length(unique(ders$subject[which(ders$group=='E'&ders$timepoint=='post')]))
+ders_nf_sample_fu1<-length(unique(ders$subject[which(ders$group=='E'&ders$timepoint=='fu1')]))
+ders_nf_sample_fu2<-length(unique(ders$subject[which(ders$group=='E'&ders$timepoint=='fu2')]))
+ders_ctrl_sample_pre<-length(unique(ders$subject[which(ders$group=='C'&ders$timepoint=='pre')]))
+ders_ctrl_sample_post<-length(unique(ders$subject[which(ders$group=='C'&ders$timepoint=='post')]))
+ders_ctrl_sample_fu1<-length(unique(ders$subject[which(ders$group=='C'&ders$timepoint=='fu1')]))
+ders_ctrl_sample_fu2<-length(unique(ders$subject[which(ders$group=='C'&ders$timepoint=='fu2')]))
 
 #extract BDI questionnaire
 bdi<-rbind(select(pre,c('subject','timepoint','group',6:26)),select(post,c('subject','timepoint','group',6:26)),select(fu1,c('subject','timepoint','group',41:61)),select(fu2,c('subject','timepoint','group',41:61)))
@@ -71,7 +84,19 @@ bdi$total<-rowSums(bdi[,4:24])
 bdi<-na.omit(bdi) #get rid of data w/NAs
 
 #plot bdi
-ggplot(bdi,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('BDI-II score')+ggtitle('Besk Depression Inventory')
+ggplot(bdi,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('BDI-II score')+ggtitle('Besk Depression Inventory')+scale_color_manual(values=c("#D55E00", "#009E73"))
+
+#calculate sample size
+bdi_nf_sample<-length(unique(bdi$subject[which(bdi$group=='E')]))
+bdi_ctrl_sample<-length(unique(bdi$subject[which(bdi$group=='C')]))
+bdi_nf_sample_pre<-length(unique(bdi$subject[which(bdi$group=='E'&bdi$timepoint=='pre')]))
+bdi_nf_sample_post<-length(unique(bdi$subject[which(bdi$group=='E'&bdi$timepoint=='post')]))
+bdi_nf_sample_fu1<-length(unique(bdi$subject[which(bdi$group=='E'&bdi$timepoint=='fu1')]))
+bdi_nf_sample_fu2<-length(unique(bdi$subject[which(bdi$group=='E'&bdi$timepoint=='fu2')]))
+bdi_ctrl_sample_pre<-length(unique(bdi$subject[which(bdi$group=='C'&bdi$timepoint=='pre')]))
+bdi_ctrl_sample_post<-length(unique(bdi$subject[which(bdi$group=='C'&bdi$timepoint=='post')]))
+bdi_ctrl_sample_fu1<-length(unique(bdi$subject[which(bdi$group=='C'&bdi$timepoint=='fu1')]))
+bdi_ctrl_sample_fu2<-length(unique(bdi$subject[which(bdi$group=='C'&bdi$timepoint=='fu2')]))
 
 #extract PCL-5 questionnaire
 pcl5<-rbind(select(pre,c('subject','timepoint','group',312:331)),select(post,c('subject','timepoint','group',174:193)),select(fu1,c('subject','timepoint','group',209:228)),select(fu2,c('subject','timepoint','group',209:228)))
@@ -81,4 +106,16 @@ pcl5$total<-rowSums(pcl5[,4:23])
 pcl5<-na.omit(pcl5) #get rid of data w/NAs
 
 #plot pcl-5
-ggplot(pcl5,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('PCL-5 score')+ggtitle('PTSD Checklist for DSM-5')
+ggplot(pcl5,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('PCL-5 score')+ggtitle('PTSD Checklist for DSM-5')+scale_color_manual(values=c("#D55E00", "#009E73"))
+
+#calculate sample size
+pcl5_nf_sample<-length(unique(pcl5$subject[which(pcl5$group=='E')]))
+pcl5_ctrl_sample<-length(unique(pcl5$subject[which(pcl5$group=='C')]))
+pcl5_nf_sample_pre<-length(unique(pcl5$subject[which(pcl5$group=='E'&pcl5$timepoint=='pre')]))
+pcl5_nf_sample_post<-length(unique(pcl5$subject[which(pcl5$group=='E'&pcl5$timepoint=='post')]))
+pcl5_nf_sample_fu1<-length(unique(pcl5$subject[which(pcl5$group=='E'&pcl5$timepoint=='fu1')]))
+pcl5_nf_sample_fu2<-length(unique(pcl5$subject[which(pcl5$group=='E'&pcl5$timepoint=='fu2')]))
+pcl5_ctrl_sample_pre<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$timepoint=='pre')]))
+pcl5_ctrl_sample_post<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$timepoint=='post')]))
+pcl5_ctrl_sample_fu1<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$timepoint=='fu1')]))
+pcl5_ctrl_sample_fu2<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$timepoint=='fu2')]))
