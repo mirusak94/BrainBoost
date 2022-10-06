@@ -1,6 +1,8 @@
 #21.09.22 FK
 #Dataframes IMI for Brainboost
 
+library(dplyr)
+library(reshape)
 
 #set working directory
 setwd("W:/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/Fragebogen")
@@ -36,17 +38,37 @@ df_imi$date<-as.POSIXct(df_imi$date,format="%d.%m.%Y um %H:%M:%S")
 df_imi[grepl("R",colnames(df_imi),fixed = TRUE)]<-8-df_imi[grepl("R",colnames(df_imi),fixed = TRUE)]
 
 #estimate means for each subscale; ignoring missing values
-mean_val <- rowMeans(df_imi[grepl("val",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
-mean_int <- rowMeans(df_imi[grepl("int",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
-mean_eff <- rowMeans(df_imi[grepl("eff",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
-mean_pre <- rowMeans(df_imi[grepl("pre",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
-mean_com <- rowMeans(df_imi[grepl("com",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
+value <- rowMeans(df_imi[grepl("val",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
+interest <- rowMeans(df_imi[grepl("int",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
+effort <- rowMeans(df_imi[grepl("eff",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
+pressure <- rowMeans(df_imi[grepl("pre",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
+competence <- rowMeans(df_imi[grepl("com",colnames(df_imi),fixed = TRUE)],na.rm = TRUE)
 
 #add as coloumns
-df_imi<-cbind(df_imi,mean_val,mean_int,mean_eff,mean_pre,mean_com)
+df_imi<-cbind(df_imi,value,interest,effort,pressure,competence)
 
 #create data frame with means only
 df_imi_means<-df_imi[,c(2,33,34,35,36,37,32)]
 
 #export
-write.csv(df_imi_means,"W:/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/Fragebogen/clean_imi.csv", row.names = FALSE)
+#write.csv(df_imi_means,"W:/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/Fragebogen/clean_imi.csv", row.names = FALSE)
+
+remove(de_raw_NF_3,df_imi_means,Items,no,dims,competence,effort,interest,pressure, value)
+
+df_imi<-df_imi[,c(2,33:37)]
+df_imi<-reshape::melt(df_imi, id='ID')
+colnames(df_imi)<- c("subject","subscale","score")
+
+ggplot(df_imi,aes(subscale,score, fill=subscale))+geom_boxplot()+ggtitle('Intristic Motivation Inventory')+theme(axis.title.x=element_blank(),axis.text.x=element_blank())+scale_fill_brewer(palette='Set1')
+
+#correlate with PES
+PES <- read.csv("PES_realtimeData.csv",sep=",",fileEncoding="latin1")
+PES<-group_by(PES, subject)
+subPES<- summarise(PES, PES=mean(blockES))
+#prepare IMI for merging with subPES
+df_imi<-mutate(df_imi, subject=sub('b','sub-',substr(subject,3,5)))
+
+#merge IMI & subPES
+imiPES<-merge(subPES,df_imi)
+
+ggplot(imiPES,aes(0-PES,score))+geom_point()+geom_smooth(method='lm')+labs(x='downregulation success')+ggtitle('Correlation of motivation subscales with downregulation success')+ scale_color_brewer(palette='Set1')+facet_row(~subscale)+theme(legend.position = 'none')
