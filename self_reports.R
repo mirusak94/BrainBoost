@@ -10,6 +10,9 @@ pre<-read.csv('//hobbes/daten/PSM/Brainboost/evasys/BBpre_raw.csv', sep = ';')
 post<-read.csv('//hobbes/daten/PSM/Brainboost/evasys/BBpost_raw.csv', sep = ';')
 fu<-read.csv('//hobbes/daten/PSM/Brainboost/evasys/BBfu_raw.csv', sep = ';')
 
+bsl_pre<-read_xlsx('//hobbes/daten/PSM/Brainboost/evasys/BSL/BSL_prä.xlsx')
+bsl_post<-read_xlsx('//hobbes/daten/PSM/Brainboost/evasys/BSL/BSL_post.xlsx')
+
 ##CLEANING DATA
 
 #rename column with subject ID and make the subject ID uniform
@@ -22,9 +25,17 @@ post<-mutate(post, subject=sub('b','sub-',substr(subject,3,5)))
 colnames(fu)[2] <- "subject"
 fu<-mutate(fu, subject=sub('b','sub-',substr(subject,3,5)))
 
+colnames(bsl_pre)[2] <- "subject"
+bsl_pre<-mutate(bsl_pre, subject=sub('b','sub-',substr(subject,3,5)))
+
+colnames(bsl_post)[2] <- "subject"
+bsl_post<-mutate(bsl_post, subject=sub('b','sub-',substr(subject,3,5)))
+
 #add timepoint info to each dataset
 pre<-mutate(pre, timepoint=rep('pre',length(subject)))
 post<-mutate(post, timepoint=rep('post',length(subject)))
+bsl_pre<-mutate(bsl_pre, timepoint=rep('pre',length(subject)))
+bsl_post<-mutate(bsl_post, timepoint=rep('post',length(subject)))
 #fu includes both - 3m and 6m follow up, this has to be separated
 fu<-mutate(fu, Date=as.Date(gsub('\\.','/',substr(Zeitstempel,1,10)),format='%d/%m/%Y'))
 fu<-group_by(fu,subject)
@@ -40,6 +51,8 @@ group_info<-select(filter(demographics, is.na(Comments)|!Comments=='dropped out'
 group_info<-mutate(group_info, subject=sub('sub','sub-',subject))
 pre<-merge(pre, group_info, by='subject')
 post<-merge(post, group_info, by='subject')
+bsl_pre<-merge(bsl_pre, group_info, by='subject')
+bsl_post<-merge(bsl_post, group_info, by='subject')
 fu1<-merge(fu1, group_info, by='subject')
 fu2<-merge(fu2, group_info, by='subject')
 
@@ -51,6 +64,10 @@ colnames(ders)[4:39]<-paste0(rep('i',36),1:36) #rename the items i1 to i36 for e
 ders<-mutate(ders, total=-i1+i2-i3+i4+i5-i6-i7-i8+i9-i10+i11+i12+i13+i14+i15+i16-i17+i18+i19-i20+i21-i22+i23-i24+i25+i26+i27+i28+i29+i30+i31+i32+i33-i34+i35+i36)
 ders<-na.omit(ders) #get rid of data w/NAs
 
+#exclude data with missing data at pre or post points
+ders_miss<-setdiff(unique(ders$subject[which(ders$timepoint=='pre')]),unique(ders$subject[which(ders$timepoint=='post')]))
+ders_miss<-c(ders_miss,setdiff(unique(ders$subject[which(ders$timepoint=='post')]),unique(ders$subject[which(ders$timepoint=='pre')])))
+ders<-ders[-which(ders$subject%in%ders_miss),]
 #plot ders
 ggplot(ders,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DERS score')+ggtitle('Difficulties in Emotion Regulation Scale')+scale_color_manual(values=c("#D55E00", "#009E73"))
 
@@ -83,6 +100,10 @@ bdi$Veränderung.des.Appetits[bdi$Veränderung.des.Appetits>=6&bdi$Veränderung.
 bdi$total<-rowSums(bdi[,4:24])
 bdi<-na.omit(bdi) #get rid of data w/NAs
 
+#exclude data with missing data at pre or post points
+bdi_miss<-setdiff(unique(bdi$subject[which(bdi$timepoint=='pre')]),unique(bdi$subject[which(bdi$timepoint=='post')]))
+bdi<-bdi[-which(bdi$subject%in%bdi_miss),]
+
 #plot bdi
 ggplot(bdi,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('BDI-II score')+ggtitle('Besk Depression Inventory')+scale_color_manual(values=c("#D55E00", "#009E73"))
 
@@ -105,6 +126,10 @@ pcl5<-rbind(select(pre,c('subject','timepoint','group',312:331)),select(post,c('
 pcl5$total<-rowSums(pcl5[,4:23])
 pcl5<-na.omit(pcl5) #get rid of data w/NAs
 
+#exclude data with missing data at pre or post points
+pcl5_miss<-setdiff(unique(pcl5$subject[which(pcl5$timepoint=='pre')]),unique(pcl5$subject[which(pcl5$timepoint=='post')]))
+pcl5<-pcl5[-which(pcl5$subject%in%pcl5_miss),]
+
 #plot pcl-5
 ggplot(pcl5,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('PCL-5 score')+ggtitle('PTSD Checklist for DSM-5')+scale_color_manual(values=c("#D55E00", "#009E73"))
 
@@ -119,3 +144,32 @@ pcl5_ctrl_sample_pre<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$time
 pcl5_ctrl_sample_post<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$timepoint=='post')]))
 pcl5_ctrl_sample_fu1<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$timepoint=='fu1')]))
 pcl5_ctrl_sample_fu2<-length(unique(pcl5$subject[which(pcl5$group=='C'&pcl5$timepoint=='fu2')]))
+
+###BSL-23 data
+bsl<-as.data.frame(rbind(select(bsl_pre,c('subject','timepoint','group',3:25)),select(bsl_post,c('subject','timepoint','group',3:25)),select(fu1,c('subject','timepoint','group',6:28)),select(fu2,c('subject','timepoint','group',6:28))))
+
+#exclude dataset where more than 10% of items are missing
+bsl$nas<-rowSums(is.na(bsl[,c(4:26)]))
+bsl<-bsl[which(bsl$nas<2),]
+
+#calculate total score
+bsl$total<-rowMeans(bsl[,c(4:26)], na.rm = TRUE)
+
+#exclude data with missing data at pre or post points
+bsl_miss<-setdiff(unique(bsl$subject[which(bsl$timepoint=='pre')]),unique(bsl$subject[which(bsl$timepoint=='post')]))
+bsl<-bsl[-which(bsl$subject%in%bsl_miss),]
+
+#plot bsl-23
+ggplot(bsl,aes(x=factor(timepoint,levels = c("pre", "post","fu1","fu2")),y = total), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('BSL-23 score')+ggtitle('BSL-23')+scale_color_manual(values=c("#D55E00", "#009E73"))
+
+#calculate sample size
+bsl_nf_sample<-length(unique(bsl$subject[which(bsl$group=='E')]))
+bsl_ctrl_sample<-length(unique(bsl$subject[which(bsl$group=='C')]))
+bsl_nf_sample_pre<-length(unique(bsl$subject[which(bsl$group=='E'&bsl$timepoint=='pre')]))
+bsl_nf_sample_post<-length(unique(bsl$subject[which(bsl$group=='E'&bsl$timepoint=='post')]))
+bsl_nf_sample_fu1<-length(unique(bsl$subject[which(bsl$group=='E'&bsl$timepoint=='fu1')]))
+bsl_nf_sample_fu2<-length(unique(bsl$subject[which(bsl$group=='E'&bsl$timepoint=='fu2')]))
+bsl_ctrl_sample_pre<-length(unique(bsl$subject[which(bsl$group=='C'&bsl$timepoint=='pre')]))
+bsl_ctrl_sample_post<-length(unique(bsl$subject[which(bsl$group=='C'&bsl$timepoint=='post')]))
+bsl_ctrl_sample_fu1<-length(unique(bsl$subject[which(bsl$group=='C'&bsl$timepoint=='fu1')]))
+bsl_ctrl_sample_fu2<-length(unique(bsl$subject[which(bsl$group=='C'&bsl$timepoint=='fu2')]))
