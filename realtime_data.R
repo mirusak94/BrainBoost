@@ -13,7 +13,7 @@ library(effectsize)
 
 #load data
 setwd('//zi.local/flstorage/dep_psm/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/realtime')
-data<-read.csv('trainingData20220705T124626.csv')
+data<-read.csv('trainingData20220928T173516.csv')
 
 #extract relevant data
 data$functional_image_fn[which(data$subject=='sub-14'& data$session=='ses-training3')]<-str_replace(data$functional_image_fn[which(data$subject=='sub-14'& data$session=='ses-training3')],'SUB14_NF3.SUB14_NF3','SUB14NF3.SUB14NF3') #correct naming for sub-14, ses-training3
@@ -48,6 +48,9 @@ PES<-mutate(PES, session=as.numeric(substr(session,13,13)), NFrun=as.numeric(sub
 PES<-mutate(PES, run=(session-1+(NFrun-1+session)))
 PES<-group_by(PES, subject, session, run)
 cycP<-summarise(PES, PES=mean(blockES))
+
+#save PES
+#write.csv(PES,"W:/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/Fragebogen/PES_realtimeData.csv", row.names = FALSE)
 
 #plots
 ggplot(cycP,aes(run,PES))+stat_summary(fun.y = mean,geom = 'point')+stat_summary(fun.y = mean,geom = 'line', aes(group=1))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.4)+scale_x_continuous(breaks = c(1:6))+ggtitle('Personal effect size')
