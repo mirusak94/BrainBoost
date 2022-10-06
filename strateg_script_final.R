@@ -1,6 +1,9 @@
 #21.09.22 FK
 #Dataframes Strats for Brainboost
 
+library(RColorBrewer)
+library(ggplot2)
+library(scales)
 
 #set working directory
 setwd("W:/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/Fragebogen")
@@ -63,4 +66,44 @@ df_strategies$OpenQ2[df_strategies$OpenQ2==1]<-"Yes"
 df_strategies$OpenQ2[df_strategies$OpenQ2==2]<-"No"
 
 #export
-write.csv(df_strategies,"W:/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/Fragebogen/clean_strategies.csv", row.names = FALSE)
+#write.csv(df_strategies,"W:/group_psm/AG-Paret/Projects/BrainBoost/data_analysis/Fragebogen/clean_strategies.csv", row.names = FALSE)
+
+remove(de_raw_NF_1_2,de_raw_NF_3,df_ID_freq,ID_sort,Session)
+
+##strategies analysis
+df_strategies<-mutate(df_strategies, reappraisal=rowMeans(df_strategies[,c('Q1','Q2','Q8','Q9','Q10','Q11')], na.rm=TRUE), distraction=rowMeans(df_strategies[,c('Q3','Q7')],na.rm=TRUE), relaxation=Q4,mindfulness=Q5, attention_to_neutral=Q6, supression=Q12)
+strateg<-df_strategies[,c("ID","Session","reappraisal","supression","mindfulness","attention_to_neutral","relaxation","distraction")]
+strateg<-reshape::melt(strateg, id=c('ID','Session'))
+
+colnames(strateg)<- c("subject","session","strategy","frequency")
+
+#exclude subjects that dropped out
+all<-unique(strateg$subject)
+complete3<-unique(strateg$subject[which(strateg$session=='3')])
+missing3<-setdiff(all,complete3)
+complete2<-unique(strateg$subject[which(strateg$session=='3')])
+missing2<-setdiff(all,complete2)
+missing<-unique(c(missing2,missing3))
+strateg<-strateg[!strateg$subject %in% missing,]
+
+ggplot(strateg,aes(strategy,frequency, fill=strategy))+stat_summary(fun=mean, geom='bar')+stat_summary(fun.data=mean_cl_normal, geom='errorbar', width=0.2)+ylab('Mean Frequency')+ggtitle('Strategies used during neurofeedback')+theme(axis.title.x=element_blank(),axis.text.x=element_blank())+scale_fill_brewer(palette='Set1')
+
+
+#correlate with PES
+PES <- read.csv("PES_realtimeData.csv",sep=",",fileEncoding="latin1")
+PES<-group_by(PES, subject,session)
+sesPES<- summarise(PES, PES=mean(blockES))
+
+#prepare strateg for merging with sesPES
+strateg<-mutate(strateg, subject=sub('b','sub-',substr(subject,3,5)))
+
+#merge IMI & subPES
+strPES<-merge(sesPES,strateg)
+
+ggplot(strPES,aes(0-PES,frequency, color=strategy))+geom_point()+geom_smooth(method='lm')+labs(x='downregulation success')+ggtitle('Correlation of strategies with downregulation success')+ scale_color_brewer(palette='Set1')+facet_wrap(~strategy)+theme(legend.position = 'none')
+
+#between sub corr
+strPES<-group_by(strPES,subject, strategy)
+strPESsub<-summarise(strPES, frequency=mean(frequency), PES=mean(PES))
+
+ggplot(strPESsub,aes(0-PES,frequency, color=strategy))+geom_point()+geom_smooth(method='lm')+labs(x='downregulation success')+ggtitle('Correlation of strategies with downregulation success')+ scale_color_brewer(palette='Set1')+facet_wrap(~strategy)+theme(legend.position = 'none')
