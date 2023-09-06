@@ -11,14 +11,15 @@ library(Hmisc)
 library(chron)
 
 #load data into one file
-folders<-list.files(path = "//hobbes/daten/PSM/Brainboost/moviesens/EMA", recursive = TRUE,pattern = "*xlsx", full.names = TRUE)
+folders<-list.files(path = "W:/group_psm/share/MR_Backup/hobbes/Brainboost/moviesens/EMA/abgeschlossen", recursive = TRUE,pattern = "*xlsx", full.names = TRUE)
 files<-sapply(folders,read_xlsx)
 all<-rbindlist(files,idcol = "subject", fill = TRUE)
 #create columns containing subject code and timepoint
-all<- all %>% mutate(timepoint=substr(subject,56,57),subject=substr(subject,51,55)) %>%
+all<- all %>% mutate(timepoint=substr(subject,87,88),subject=substr(subject,82,86)) %>%
   relocate(timepoint,.after=subject) %>%
   mutate(timepoint= gsub('pr','pre',timepoint),
          timepoint= gsub('po','post',timepoint))
+
 
 #drop columns where all values are NA
 all<-select_if(all,~any(!is.na(.)))
@@ -91,6 +92,13 @@ return_sum<-filter(return_sum,Form!='Missing')
 ggplot(data=filter(return_sum, group =='E'), aes(x=factor(timepoint,levels = c("pre", "post","fu")),y=return, fill=Form))+geom_boxplot()+ylim(1,100)+xlab('timepoint')+ylab('% response rate')+ ggtitle('NF group - EMA response rate')+ scale_color_brewer(palette="Dark2")
 ggplot(data=filter(return_sum, group =='C'), aes(x=factor(timepoint,levels = c("pre", "post","fu")),y=return, fill=Form))+geom_boxplot()+ylim(1,100)+xlab('timepoint')+ylab('% response rate')+ ggtitle('control group - EMA response rate')+ scale_color_brewer(palette="Dark2")
 
+#descriptive stats of response rate
+return_sum<-group_by(return_sum, timepoint, group)
+desc_return<-summarise(return_sum, mean=mean(return), sd=sd(return),n=length(unique(subject)))
+
+#plot % return (summary)
+ggplot(data=return_sum, aes(x=factor(timepoint,levels = c("pre", "post","fu")),y=return))+geom_boxplot()+ylim(1,100)+xlab('timepoint')+ylab('% response rate')+ ggtitle('NF group - EMA response rate')+facet_grid(~group)
+
 
 ##clean DATA 
 #(sorted to negative affect, positive affect, dss-4, inner tension, experience)
@@ -135,7 +143,8 @@ ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = na), group
 ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = pa), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Positive Affect')+ggtitle('Change in positive affect')+scale_color_manual(values=c("#D55E00", "#009E73"))
 ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = dss4), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('DSS-4')+ggtitle('Change in dissociative state')+scale_color_manual(values=c("#D55E00", "#009E73"))
 ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = tens), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Inner tension')+ggtitle('Change in inner tension')+scale_color_manual(values=c("#D55E00", "#009E73"))
-ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = g_exp), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Good experience intensity')+ggtitle('Change in reactivity to good experiences')+scale_color_manual(values=c("#D55E00", "#009E73"))
+ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = g_exp), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Good experience intensity')+ggtitle('Change in reactivity to good experiences')+scale_color_manual(values=c("#006960", "#C7361B"))
+# ↑ this one looks good
 ggplot(ema,aes(x=factor(timepoint,levels = c("pre", "post","fu")),y = b_exp), group=group)+stat_summary(fun= mean,geom = 'point',size=3,aes(color=group))+stat_summary(fun = mean,geom='line', aes(group=group,color=group))+stat_summary(fun.data = mean_cl_normal,geom = 'errorbar', width=0.2,aes(color=group))+xlab('Timepoint')+ylab('Bad experience intensity')+ggtitle('Change in reactivity to bad experiences')+scale_color_manual(values=c("#D55E00", "#009E73"))
 
 #MSSD
