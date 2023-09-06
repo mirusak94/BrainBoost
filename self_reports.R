@@ -6,9 +6,9 @@ library(readxl)
 library(ggplot2)
 
 #read the data
-pre<-read.csv('//hobbes/daten/PSM/Brainboost/evasys/BBpre_raw.csv', sep = ';')
-post<-read.csv('//hobbes/daten/PSM/Brainboost/evasys/BBpost_raw.csv', sep = ';')
-fu<-read.csv('//hobbes/daten/PSM/Brainboost/evasys/BBfu_raw.csv', sep = ';')
+pre<-read.csv('W:/hobbes-daten/PSM/Brainboost/evasys/BBpre_raw.csv', sep = ';',fileEncoding = "Latin1")
+post<-read.csv('W:/hobbes-daten/PSM/Brainboost/evasys/BBpost_raw.csv', sep = ';',fileEncoding = "Latin1")
+fu<-read.csv('W:/hobbes-daten/PSM/Brainboost/evasys/BBfu_raw.csv', sep = ';',fileEncoding = "Latin1")
 
 bsl_pre<-read_xlsx('//hobbes/daten/PSM/Brainboost/evasys/BSL/BSL_prä.xlsx')
 bsl_post<-read_xlsx('//hobbes/daten/PSM/Brainboost/evasys/BSL/BSL_post.xlsx')
